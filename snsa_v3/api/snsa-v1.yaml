@@ -1,0 +1,143 @@
+openapi: 3.0.0
+info:
+  title: SNSA API
+  version: v1
+
+paths:
+  /v1/serials/push:
+    post:
+      summary: Push confirmed HU serials to SAP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - huNumber
+                - items
+              properties:
+                huNumber:
+                  type: string
+                  example: HU123456
+                sessionId:
+                  type: string
+                  example: "42"
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - material
+                      - serialNumbers
+                    properties:
+                      material:
+                        type: string
+                        example: ACC-WEBCAM-01
+                      manufacturingPartNumber:
+                        type: string
+                        example: MPN-001
+                      eanCode:
+                        type: string
+                        example: "1234567890123"
+                      batch:
+                        type: string
+                        example: BATCH123
+                      uom:
+                        type: string
+                        example: EA
+                      serialNumberProfile:
+                        type: string
+                        example: II02
+                      serialNumbers:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "SN0000001"
+                          - "SN0000002"
+      responses:
+        '200':
+          description: Push accepted by SAP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sap_document_ref:
+                    type: string
+                    example: "4900012345"
+        '400':
+          description: Invalid request payload
+        '502':
+          description: SAP/ACF communication error
+  /v1/hu/{huNumber}:
+    get:
+      summary: Get HU content from SAP
+      description: Retrieve handling unit data including materials, quantities, and serial number profiles
+      parameters:
+        - name: huNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          example: HU123456
+      responses:
+        '200':
+          description: HU data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - huNumber
+                  - items
+                properties:
+                  huNumber:
+                    type: string
+                    example: HU123456
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - material
+                        - quantity
+                        - snProfile
+                      properties:
+                        material:
+                          type: string
+                          example: ACC-WEBCAM-01
+                        description:
+                          type: string
+                          example: Webcam HD 1080p
+                        quantity:
+                          type: integer
+                          example: 10
+                        snProfile:
+                          type: string
+                          example: II02
+                        isSerialized:
+                          type: boolean
+                          example: true
+                        batch:
+                          type: string
+                          example: BATCH123
+                        ean:
+                          type: string
+                          example: "1234567890123"
+                        manufacturingPartNumber:
+                          type: string
+                          example: MPN-001
+                        deliveryRef:
+                          type: string
+                          example: DEL-9000123
+                        uom:
+                          type: string
+                          example: EA
+        '404':
+          description: HU not found
+        '409':
+          description: HU already serialized or not eligible for serialization
+        '502':
+          description: SAP/ACF communication error

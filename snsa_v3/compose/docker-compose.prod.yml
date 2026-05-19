@@ -1,0 +1,45 @@
+services:
+
+  # PostgreSQL — NOT exposed to host in production
+  # Note: in OpenShift this service is removed entirely.
+  # The DATABASE_URL will point to the ISSC-managed PostgreSQL instance.
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: snsa_postgres_prod
+    env_file:
+      - ../.env.prod
+    volumes:
+      - snsa_postgres_prod_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # WhiteNoise serves static files directly from Gunicorn.
+  # Static files are baked into the image at build time (Dockerfile.prod).
+  # Port 8000 is exposed to host here for VPS/compose-prod deployments.
+  # In OpenShift this is replaced by a Service + Route — port mapping
+  # is handled by the platform, not the compose file.
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.prod
+    container_name: snsa_backend_prod
+    env_file:
+      - ../.env.prod
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  snsa_postgres_prod_data:
+  # snsa_static_prod removed — statics are baked into the image

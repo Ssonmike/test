@@ -1,0 +1,15 @@
+target-version = "py311"
+
+exclude = [
+    "migrations",
+    "staticfiles",
+    ".venv",
+    "venv",
+]
+
+[lint.per-file-ignores]
+# Django split-settings pattern: dev/prod/test inherit from base via `from .base import *`.
+# F403 (star import) and F405 (undefined from star) are intentional here.
+"SNSA/settings/dev.py" = ["F403", "F405"]
+"SNSA/settings/prod.py" = ["F403", "F405"]
+"SNSA/settings/test.py" = ["F403", "F405"]

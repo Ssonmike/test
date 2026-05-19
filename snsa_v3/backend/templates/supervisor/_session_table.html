@@ -1,0 +1,95 @@
+{% if sessions %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">#</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">HU</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">Flow</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">Progress</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">Operator</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">Age</th>
+                <th class="px-4 py-3 text-left font-semibold text-gray-600">SAP Doc</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+        {% for s in sessions %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ s.id }}</td>
+                <td class="px-4 py-3 font-mono font-semibold text-gray-800">{{ s.hu_number }}</td>
+                <td class="px-4 py-3">
+                    {% if s.flow_type == "single_sku" %}
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">Single</span>
+                    {% elif s.flow_type == "multi_sku" %}
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">Multi</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">No SN</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if s.status == "completed" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Completed
+                        </span>
+                    {% elif s.status == "scan_in_progress" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                            <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>Scanning
+                        </span>
+                    {% elif s.status == "ready_to_scan" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                            <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>Ready
+                        </span>
+                    {% elif s.status == "ready_to_complete" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Ready to Confirm
+                        </span>
+                    {% elif s.status == "sap_push_failed" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Push Failed
+                        </span>
+                    {% elif s.status == "error_lookup_failed" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>Lookup Error
+                        </span>
+                    {% elif s.status == "no_serialization_required" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>No SN Needed
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>{{ s.get_status_display }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-20 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                            {% if s.total_expected > 0 %}
+                            <div class="h-full rounded-full
+                                        {% if s.status == 'completed' %}bg-green-500
+                                        {% else %}bg-blue-500{% endif %}"
+                                 style="width: {% widthratio s.total_scanned s.total_expected 100 %}%">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span class="text-xs text-gray-500 tabular-nums">
+                            {{ s.total_scanned }}/{{ s.total_expected }}
+                        </span>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ s.operator.username|default:"—" }}</td>
+                <td class="px-4 py-3 text-gray-400 text-xs">{{ s.created_at|timesince }}</td>
+                <td class="px-4 py-3 font-mono text-xs text-gray-500">
+                    {{ s.sap_document_ref|default:"—" }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-400">
+    No sessions recorded yet.
+</div>
+{% endif %}

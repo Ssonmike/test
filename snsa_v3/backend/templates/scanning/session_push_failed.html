@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Push Failed — {{ session.hu_number }} — SNSA{% endblock %}
+
+{% block content %}
+<div class="mt-6">
+    <div class="bg-red-50 border-2 border-red-400 rounded-xl p-6 mb-4 text-center">
+        <div class="text-5xl mb-3">✗</div>
+        <h1 class="text-2xl font-bold text-red-800">SAP Push Failed</h1>
+        <p class="text-red-700 mt-2 font-mono">{{ session.hu_number }}</p>
+        <p class="text-red-600 mt-2">{{ session.failure_reason }}</p>
+        <p class="text-sm text-gray-500 mt-2">Attempts: {{ session.sap_push_attempts }}</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+        <p class="text-sm text-gray-600">
+            Your scan data is preserved. You can retry the push to SAP.
+        </p>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ session.total_scanned }} serials ready to send.
+        </p>
+    </div>
+
+    <div id="retry-feedback"></div>
+
+    <form hx-post="{% url 'session-retry-page' session_id=session.id %}"
+          hx-target="#retry-feedback"
+          hx-swap="innerHTML">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full bg-red-600 text-white text-xl py-4 rounded-lg
+                       hover:bg-red-700 active:bg-red-800 transition font-bold mb-3">
+            Retry Push to SAP
+        </button>
+    </form>
+
+    <a href="{% url 'session-scan-page' session_id=session.id %}"
+       class="block text-center text-sm text-gray-500 hover:text-gray-700">
+        ← Review scanned data
+    </a>
+</div>
+{% endblock %}

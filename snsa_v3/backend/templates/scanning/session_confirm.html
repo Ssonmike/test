@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Confirm — {{ session.hu_number }} — SNSA{% endblock %}
+
+{% block content %}
+<div class="mt-4">
+    <div class="bg-green-50 border-2 border-green-400 rounded-xl p-6 mb-4 text-center">
+        <div class="text-5xl mb-3">✓</div>
+        <h1 class="text-2xl font-bold text-green-800 mb-2">All Serials Scanned</h1>
+        <p class="text-green-700">HU: <span class="font-mono font-bold">{{ session.hu_number }}</span></p>
+        <p class="text-green-700 text-lg font-bold mt-1">
+            {{ session.total_scanned }} / {{ session.total_expected }} serials
+        </p>
+    </div>
+
+    {# Summary of scanned items #}
+    <div class="bg-white rounded-lg shadow p-3 mb-4">
+        <h2 class="text-sm font-bold text-gray-600 mb-2">Scanned Items</h2>
+        {% for item in items %}
+        <div class="flex justify-between items-center py-1 border-b last:border-0">
+            <div>
+                <span class="font-mono text-sm">{{ item.material_number }}</span>
+                <span class="text-xs text-gray-400 ml-1">{{ item.description }}</span>
+            </div>
+            <span class="text-sm font-bold text-green-600">{{ item.scanned_qty }}/{{ item.expected_qty }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Push error area (HTMX target) #}
+    <div id="push-feedback"></div>
+
+    {# Confirm button — explicit operator action #}
+    <form hx-post="{% url 'session-confirm-page' session_id=session.id %}"
+          hx-target="#push-feedback"
+          hx-swap="innerHTML"
+          hx-indicator="#confirm-spinner">
+        {% csrf_token %}
+        <button type="submit"
+                id="confirm-btn"
+                class="w-full bg-green-600 text-white text-xl py-5 rounded-lg
+                       hover:bg-green-700 active:bg-green-800 transition font-bold
+                       flex items-center justify-center gap-3">
+            <span>Confirm &amp; Push to SAP</span>
+            <span id="confirm-spinner" class="htmx-indicator">
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </span>
+        </button>
+    </form>
+
+    <a href="{% url 'session-scan-page' session_id=session.id %}"
+       class="block mt-3 text-center text-sm text-gray-500 hover:text-gray-700">
+        ← Back to scanning
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // F1 shortcut for confirm
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F1') {
+            e.preventDefault();
+            document.getElementById('confirm-btn').click();
+        }
+    });
+</script>
+{% endblock %}

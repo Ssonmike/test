@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Scan — {{ session.hu_number }} — SNSA{% endblock %}
+
+{% block content %}
+<div>
+
+    {# ── Header: HU + Flow Badge (static — does not change during session) ── #}
+    <div class="bg-white rounded-lg shadow p-3 mb-3">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold font-mono">{{ session.hu_number }}</h1>
+            <div class="flex gap-2">
+                {% if session.flow_type == "single_sku" %}
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">SINGLE SKU</span>
+                {% elif session.flow_type == "multi_sku" %}
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">MULTI SKU</span>
+                {% endif %}
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    {{ session.serialised_item_count }} SKU{{ session.serialised_item_count|pluralize }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {# ── Scan Area (HTMX-swappable — all dynamic content lives here) ── #}
+    <div id="scan-area">
+        {% include "scanning/_scan_area.html" %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refocus input after HTMX swap
+    document.body.addEventListener('htmx:afterSwap', function(e) {
+        const inp = document.getElementById('scan-input');
+        if (inp) {
+            inp.value = '';
+            inp.focus();
+        }
+        // Audio feedback based on response content
+        const area = document.getElementById('scan-area');
+        if (area) {
+            if (area.querySelector('.scan-ok')) beepOk();
+            if (area.querySelector('.scan-error')) beepError();
+        }
+    });
+</script>
+{% endblock %}

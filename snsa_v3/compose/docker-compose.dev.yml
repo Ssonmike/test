@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: snsa_postgres_dev
+    env_file:
+      - ../.env.dev
+    volumes:
+      - snsa_postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: snsa_backend_dev
+    env_file:
+      - ../.env.dev
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    volumes:
+      - ../backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mock_acf:
+        condition: service_started
+    entrypoint: ["/app/entrypoint.sh"]
+    command: python manage.py runserver 0.0.0.0:8000
+  mock_acf:
+    build:
+      context: ../mock_acf
+      dockerfile: Dockerfile
+    container_name: snsa_mock_acf
+    ports:
+      - "8080:8080"
+volumes:
+  snsa_postgres_dev_data:

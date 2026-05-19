@@ -1,0 +1,44 @@
+
+FROM python:3.11-slim
+
+# Comment is OUTSIDE the ENV block — inline comments in multiline ENV break builds
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DJANGO_SETTINGS_MODULE=SNSA.settings.prod
+
+WORKDIR /app
+
+
+# No system build deps needed: psycopg2-binary ships precompiled wheels.
+COPY requirements/base.txt requirements/prod.txt /tmp/requirements/
+RUN pip install -r /tmp/requirements/prod.txt
+
+
+# Frontend assets are already vendored under static/vendor/ (htmx.min.js,
+# alpine.min.js, tailwind.min.css). They are tracked in Git and copied as part
+# of the application source no build-time fetch.
+COPY . .
+
+# Dummy SECRET_KEY and DATABASE_URL are needed only for this build step.
+# Real values are injected at runtime via OpenShift Secrets.
+
+RUN DJANGO_SECRET_KEY=build-only-not-used-at-runtime-aA9zX2yQ8mP3kL7nB4vC6 \
+    DATABASE_URL=sqlite:////tmp/build.db \
+    APIM_API_KEY=build-only-not-used-at-runtime \
+    python manage.py collectstatic --noinput --clear
+
+
+RUN addgroup --system --gid 1001 app \
+  && adduser --system --uid 1001 --ingroup app --no-create-home app \
+  && chgrp -R 0 /app \
+  && chmod -R g=u /app
+
+RUN chmod +x /app/entrypoint.prod.sh
+
+USER 1001
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/entrypoint.prod.sh"]

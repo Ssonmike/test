@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>{% block title %}SNSA{% endblock %}</title>
+
+    {# Vendor assets served locally, no internet dependency #}
+    {# Downloaded to backend/static/vendor/ and served via WhiteNoise #}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'vendor/tailwind.min.css' %}">
+    <script src="{% static 'vendor/htmx.min.js' %}"></script>
+    <script defer src="{% static 'vendor/alpine.min.js' %}"></script>
+
+    <meta name="htmx-config" content='{"defaultSwapStyle":"innerHTML"}'>
+    <style>
+        /* Zebra scanner optimizations */
+        body { -webkit-tap-highlight-color: transparent; }
+        input { font-size: 18px !important; }
+        .flash-green { animation: flashGreen 0.5s ease-out; }
+        .flash-red   { animation: flashRed 0.5s ease-out; }
+        @keyframes flashGreen {
+            0%   { background-color: #86efac; }
+            100% { background-color: transparent; }
+        }
+        @keyframes flashRed {
+            0%   { background-color: #fca5a5; }
+            100% { background-color: transparent; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <nav class="bg-blue-900 text-white px-4 py-2 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'hu-lookup-page' %}" class="font-bold text-lg hover:text-blue-200">SNSA</a>
+            <a href="{% url 'supervisor-sessions' %}" class="text-sm text-blue-300 hover:text-white">Supervisor</a>
+        </div>
+        <div class="flex items-center gap-3 text-sm">
+            <span class="text-blue-300">{{ request.user.username }}</span>
+            <a href="{% url 'logout' %}" class="underline hover:text-blue-200">Exit</a>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-3 py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // CSRF for HTMX
+        document.body.addEventListener('htmx:configRequest', function(e) {
+            e.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+
+        // Audio feedback
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function beepOk() {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = 1200; g.gain.value = 0.3;
+            o.start(); o.stop(audioCtx.currentTime + 0.1);
+        }
+        function beepError() {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = 300; o.type = 'square'; g.gain.value = 0.3;
+            o.start(); o.stop(audioCtx.currentTime + 0.3);
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
